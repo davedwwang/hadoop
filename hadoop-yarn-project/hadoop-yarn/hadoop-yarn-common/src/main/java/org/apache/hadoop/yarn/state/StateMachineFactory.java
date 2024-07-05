@@ -497,7 +497,7 @@ final public class StateMachineFactory
    * @return Graph object generated
    */
   @SuppressWarnings("rawtypes")
-  public Graph generateStateGraph(String name) {
+  public Graph generateStateGraph(String name, Set<String> startStates, Set<String> postStates) {
     maybeMakeStateMachineTable();
     Graph g = new Graph(name);
     for (STATE startState : stateMachineTable.keySet()) {
@@ -509,17 +509,24 @@ final public class StateMachineFactory
         if (transition instanceof StateMachineFactory.SingleInternalArc) {
           StateMachineFactory.SingleInternalArc sa
               = (StateMachineFactory.SingleInternalArc) transition;
-          Graph.Node fromNode = g.getNode(startState.toString());
-          Graph.Node toNode = g.getNode(sa.postState.toString());
-          fromNode.addEdge(toNode, entry.getKey().toString());
+          if ((startStates.size() == 0 || startStates.contains(startState.toString())) &&
+                  (postStates.size() == 0 || postStates.contains(sa.postState.toString()))) {
+            Graph.Node fromNode = g.getNode(startState.toString());
+            Graph.Node toNode = g.getNode(sa.postState.toString());
+            fromNode.addEdge(toNode, entry.getKey().toString());
+          }
         } else if (transition instanceof StateMachineFactory.MultipleInternalArc) {
           StateMachineFactory.MultipleInternalArc ma
               = (StateMachineFactory.MultipleInternalArc) transition;
           Iterator iter = ma.validPostStates.iterator();
           while (iter.hasNext()) {
-            Graph.Node fromNode = g.getNode(startState.toString());
-            Graph.Node toNode = g.getNode(iter.next().toString());
-            fromNode.addEdge(toNode, entry.getKey().toString());
+            String postState = iter.next().toString();
+            if ((startStates.size() == 0 || startStates.contains(startState.toString())) &&
+                    (postStates.size() == 0 || postStates.contains(postState))) {
+              Graph.Node fromNode = g.getNode(startState.toString());
+              Graph.Node toNode = g.getNode(postState);
+              fromNode.addEdge(toNode, entry.getKey().toString());
+            }
           }
         }
       }
